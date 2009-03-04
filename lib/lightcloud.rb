@@ -47,6 +47,45 @@ class LightCloud
     return storage_node.set(key, value)
   end
 
+  #
+  # Gets a value based on a key. 
+  def self.get(key, system=DEFAULT_SYSTEM)
+    result = nil
+
+    # Try to lookup key directly
+    storage_node = self.get_storage_ring(system).get_node(key)
+    value = storage_node.get(key)
+
+    result = value unless value.nil?
+    
+    # Else use the lookup ring
+    if result.nil?
+      storage_node = self.locate_node(key, system)
+      
+      result = storage_node.get(key) unless storage_node.nil?
+    end
+
+    result
+  end
+
+  #
+  # Lookup the key and delete it from both the storage ring
+  # and lookup ring
+  def self.delete(key, system=DEFAULT_SYSTEM)
+    storage_node = self.locate_node(key, system)
+    
+    storage_node = get_storage_ring(system).get_node(key) if storage_node.nil?
+    lookup_nodes = get_lookup_ring(system).iterate_nodes(key)
+    lookup_nodes.each_index do |i|
+      break if i > 1
+      
+      lookup_nodes[i].delete(key)
+    end
+    
+    storage_node.delete(key) unless storage_node.nil?
+    true
+  end
+
   #--
   # Lookup Cloud
   #++
@@ -122,7 +161,7 @@ class LightCloud
   # Accessors for nodes
   #++
   def self.get_storage_node(name, system=DEFAULT_SYSTEM)
-    @@systems[system][3].get(name)
+    @@systems[system][3][name]
   end
 
   #--
