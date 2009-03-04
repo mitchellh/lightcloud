@@ -36,8 +36,93 @@ class LightCloud
   #--
   # Get/Set/Delete
   #++
+  #
+  # Sets a value to a key in the LightCloud system.
+  #
+  # Set first checks to see if the key is already stored. If it is
+  # it uses that same node to store the new value. Otherwise, it
+  # determines where to store the value based on the hash_ring
   def self.set(key, value, system=DEFAULT_SYSTEM)
+    storage_node = self.locate_node_or_init(key, system)
+    return storage_node.set(key, value)
+  end
+
+  #--
+  # Lookup Cloud
+  #++
+  def self.locate_node_or_init(key, system)
+    storage_node = self.locate_node(key, system)
+
+    if storage_node.nil?
+      storage_node = self.get_storage_ring(system).get_node(key)
+
+      lookup_node = self.get_lookup_ring(system).get_node(key)
+      lookup_node.set(key, storage_node.to_s)
+    end
+
+    storage_node
+  end
+
+  #
+  # Locates a node in the lookup ring, returning the node if it is found, or
+  # nil otherwise.
+  def self.locate_node(key, system=DEFAULT_SYSTEM)
+    nodes = self.get_lookup_ring(system).iterate_nodes(key)
     
+    lookups = 0
+    value = nil
+    nodes.each_index do |i|
+      lookups = i
+      return nil if lookups > 2
+      
+      node = nodes[lookups]
+      value = node.get(key)
+
+      break unless value.nil?
+    end
+
+    return nil if value.nil?
+    
+    if lookups == 0
+      return self.get_storage_node(value, system)
+    else
+      return self._clean_up_ring(key, value, system)
+    end
+  end
+
+  def self._clean_up_ring(key, value, system)
+    nodes = self.get_lookup_ring(system).iterate_nodes(key)
+
+    nodes.each_index do |i|
+      break if i > 1
+
+      node = nodes[i]
+      if i == 0
+        node.set(key, value)
+      else
+        node.delete(key)
+      end
+    end
+
+    return self.get_storage_node(value, system)
+  end
+
+  #--
+  # Accessors for rings
+  #++
+  def self.get_lookup_ring(system=DEFAULT_SYSTEM)
+    @@systems[system][0]
+  end
+
+  def self.get_storage_ring(system=DEFAULT_SYSTEM)
+    @@systems[system][1]
+  end
+
+  #--
+  # Accessors for nodes
+  #++
+  def self.get_storage_node(name, system=DEFAULT_SYSTEM)
+    @@systems[system][3].get(name)
   end
 
   #--

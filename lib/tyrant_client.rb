@@ -8,6 +8,7 @@
 require 'rubygems'
 require 'hash_ring'
 require 'rufus/tokyo'
+require 'rufus/tokyo/tyrant'
 
 # = Tyrant Client
 #
@@ -81,7 +82,7 @@ class TyrantClient
 
     return @@connections[key] unless @@connections[key].nil?
 
-    @@connections[key] = Rufus::Tokyo::TyrantTable.new(host, port)
+    @@connections[key] = Rufus::Tokyo::Tyrant.new(host, port)
     return @@connections[key]
   end
 
