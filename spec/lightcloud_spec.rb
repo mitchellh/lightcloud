@@ -53,20 +53,49 @@ describe LightCloud do
   describe "lookup cloud methods" do
     before do
       @nodes = [mock(TyrantNode), mock(TyrantNode), mock(TyrantNode)]
+      @lookup_valid_node = mock(TyrantNode)
+      @storage_valid_node = mock(TyrantNode)
       
-      @nodes.each do |node|
+      (@nodes + [@lookup_valid_node, @storage_valid_node]).each do |node|
         node.stub!(:get).and_return(nil)
         node.stub!(:set).and_return(nil)
         node.stub!(:delete).and_return(nil)
+        node.stub!(:to_s).and_return(nil)
       end
+
+      @storage_valid_node.stub!(:to_s).and_return('storage_valid_node')
       
       @lookup_ring = mock(HashRing)
       @lookup_ring.stub!(:iterate_nodes).and_return(@nodes)
+      @lookup_ring.stub!(:get_node).and_return(@lookup_valid_node)
+      
+      @storage_ring = mock(HashRing)
+      @storage_ring.stub!(:get_node).and_return(@storage_valid_node)
       
       LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
+      LightCloud.stub!(:get_storage_ring).and_return(@storage_ring)
       
       @key = 'foo'
       @storage_node = 'bar'
+    end
+
+    describe "locating or initting a storage node by key" do
+      after do
+        LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(@storage_node)
+        LightCloud.locate_node_or_init(@key, LightCloud::DEFAULT_SYSTEM)
+      end
+
+      it "should just return the storage node if it was found" do
+        LightCloud.should_not_receive(:get_storage_ring)
+        LightCloud.should_not_receive(:get_lookup_ring)
+      end
+
+      it "should set the lookup ring to point to the new storage node if no previous storage node was found" do
+        @storage_node = nil
+        
+        @storage_ring.should_receive(:get_node).with(@key).once.and_return(@storage_valid_node)
+        @lookup_valid_node.should_receive(:set).with(@key, @storage_valid_node.to_s).once
+      end
     end
 
     describe "locating a storage node by key" do
