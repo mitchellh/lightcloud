@@ -8,6 +8,11 @@ describe LightCloud do
     }
 
     @valid_lookup_nodes, @valid_storage_nodes = LightCloud.generate_nodes(@valid_servers)
+
+    @generic_node = mock(TyrantNode)
+    [:get, :set, :delete].each do |meth|
+      @generic_node.stub!(meth).and_return(nil)
+    end
   end
 
   describe "node generation" do
@@ -141,6 +146,27 @@ describe LightCloud do
       it "should return the storage node lookup" do
         LightCloud.should_receive(:get_storage_node).with(@storage_node, anything).once
       end
+    end
+  end
+
+  describe "setting" do
+    before do
+      @key = 'hello'
+      @value = 'world!'
+
+      LightCloud.stub!(:locate_node_or_init).and_return(@generic_node)
+    end
+
+    after do
+      LightCloud.set(@key, @value)
+    end
+
+    it "should lookup the node or init for where to place key" do
+      LightCloud.should_receive(:locate_node_or_init).with(@key, anything).once.and_return(@generic_node)
+    end
+
+    it "should set the value on the node returned by locate node or init" do
+      @generic_node.should_receive(:set).with(@key, @value)
     end
   end
 end
