@@ -172,6 +172,7 @@ describe LightCloud do
 
   describe "getting" do
     before do
+      @key = 'foo'
       @value = 'baz'
       @storage_ring.should_receive(:get_node).with(@key).and_return(@generic_node)
     end
@@ -191,6 +192,48 @@ describe LightCloud do
 
       LightCloud.should_receive(:locate_node).with(@key, anything).and_return(@storage_valid_node)
       @storage_valid_node.should_receive(:get).with(@key).and_return(@value)
+    end
+  end
+
+  describe "deleting" do
+    before do
+      @key = 'foo'
+      @value = 'baz'
+    end
+
+    after do
+      # I wrap this in a should_not raise error for the final
+      # spec in this context, which WOULD raise an error if
+      # it failed
+      lambda do
+        LightCloud.delete(@key)
+      end.should_not raise_error
+    end
+
+    it "should delete the key from first two lookup nodes from iteration" do
+      @nodes[0].should_receive(:delete).with(@key).once
+      @nodes[1].should_receive(:delete).with(@key).once
+      @nodes[2].should_not_receive(:delete)
+    end
+
+    it "should first try to get the storage node from lookup ring" do
+      LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(@generic_node)
+      LightCloud.should_not_receive(:get_storage_ring)
+
+    end
+
+    it "should try to get storage node directly if lookup ring failed" do
+      LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(nil)
+      LightCloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
+      @storage_ring.should_receive(:get_node).with(@key).once.and_return(@generic_node)
+
+      @generic_node.should_receive(:delete).with(@key)
+    end
+
+    it "should only delete from a storage node if one was found" do
+      LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(nil)
+      LightCloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
+      @storage_ring.should_receive(:get_node).with(@key).once.and_return(nil)
     end
   end
 end
