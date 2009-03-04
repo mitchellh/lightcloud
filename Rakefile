@@ -6,8 +6,6 @@ require 'rake/rdoctask'
 require 'spec/rake/spectask'
 require 'fileutils'
 
-load 'hash_ring.gemspec'
-
 ###################################
 # Clean & Defaut Task
 ###################################
@@ -36,7 +34,7 @@ Rake::RDocTask.new do |rd|
     'CREDITS',
     'lib/**/*.rb')
  
-  rd.title = 'hash_ring'
+  rd.title = 'lightcloud'
  
   rd.options << '-N' # line numbers
   rd.options << '-S' # inline source
@@ -50,7 +48,7 @@ def spec
   @spec ||=
     begin
       require 'rubygems/specification'
-      data = File.read('hash_ring.gemspec')
+      data = File.read('lightcloud.gemspec')
       spec = nil
       Thread.new { spec = eval("$SAFE = 3\n#{data}") }.join
       spec
@@ -58,7 +56,7 @@ def spec
 end
  
 def package(ext='')
-  "dist/hash_ring-#{spec.version}" + ext
+  "dist/lightcloud-#{spec.version}" + ext
 end
  
 desc 'Build packages'
@@ -72,7 +70,7 @@ end
 directory 'dist/'
 CLOBBER.include('dist')
  
-file package('.gem') => %w[dist/ hash_ring.gemspec] + spec.files do |f|
+file package('.gem') => %w[dist/ lightcloud.gemspec] + spec.files do |f|
   sh "gem build hash_ring.gemspec"
   mv File.basename(f.name), f.name
 end
@@ -80,13 +78,13 @@ end
 file package('.tar.gz') => %w[dist/] + spec.files do |f|
   sh <<-SH
 git archive \
---prefix=hash_ring-#{source_version}/ \
+--prefix=lightcloud-#{source_version}/ \
 --format=tar \
 HEAD | gzip > #{f.name}
 SH
 end
 
 def source_version
-  line = File.read('lib/hash_ring.rb')[/^\s*VERSION = .*/]
+  line = File.read('lib/lightcloud.rb')[/^\s*VERSION = .*/]
   line.match(/.*VERSION = '(.*)'/)[1]
 end

@@ -13,7 +13,9 @@ Gem::Specification.new do |s|
   s.email = "mitchell.hashimoto@gmail.com"
 
   s.extra_rdoc_files = %w[README.rdoc LICENSE]
- 
+  s.add_dependency 'rufus-tokyo', '>= 0.1.9'
+  s.add_dependency 'mitchellh-hash_ring', '>= 0.1'
+
   s.has_rdoc = true
   s.homepage = 'http://github.com/mitchellh/lightcloud/'
   s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "hash_ring", "--main", "README.rdoc"]
