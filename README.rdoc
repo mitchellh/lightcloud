@@ -1,11 +1,33 @@
 = LightCloud Library for Ruby
 
+This is a library for accessing LightCloud systems through Ruby.
+
 == Background
+
+LightCloud is a distributed key-value stored open-sourced by Plurk.
+The official website which includes benchmarks, design specs, and
+more can be viewed at the following URL:
+
+http://opensource.plurk.com/LightCloud/
 
 == Usage
 
   require 'rubygems'
   require 'lightcloud'
+
+  LIGHT_CLOUD = {
+    'lookup1_A' => ['127.0.0.1:41401', '127.0.0.1:41402'],
+    'storage1_A' => ['192.168.0.2:51401', '192.168.0.2:51402']
+  }
+
+  lookup_nodes, storage_nodes = LightCloud.generate_nodes(LIGHT_CLOUD)
+  LightCloud.init(lookup_nodes, storage_nodes)
+
+  LightCloud.set("hello", "world")
+  print LightCloud.get("hello") # => world
+  LightCloud.delete("hello")
+
+  print LightCloud.get("hello") # => nil
 
 == Installation
 

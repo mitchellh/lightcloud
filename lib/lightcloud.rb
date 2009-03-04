@@ -20,6 +20,20 @@ require File.join(File.dirname(__FILE__), 'tyrant_client')
 #  require 'rubygems'
 #  require 'lightcloud'
 #
+#  LIGHT_CLOUD = {
+#    'lookup1_A' => ['127.0.0.1:41401', '127.0.0.1:41402'],
+#    'storage1_A' => ['192.168.0.2:51401', '192.168.0.2:51402']
+#  }
+#
+#  lookup_nodes, storage_nodes = LightCloud.generate_nodes(LIGHT_CLOUD)
+#  LightCloud.init(lookup_nodes, storage_nodes)
+#
+#  LightCloud.set("hello", "world")
+#  print LightCloud.get("hello") # => world
+#  LightCloud.delete("hello")
+#
+#  print LightCloud.get("hello") # => nil
+#
 class LightCloud
   VERSION = '0.1'
   DEFAULT_SYSTEM = 'default'
