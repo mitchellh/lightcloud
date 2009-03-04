@@ -49,4 +49,43 @@ describe LightCloud do
       ring.should be_kind_of(HashRing)
     end
   end
+
+  describe "lookup cloud methods" do
+    describe "locating a storage node by key" do
+      before do
+        @nodes = [mock(TyrantNode), mock(TyrantNode), mock(TyrantNode)]
+
+        @nodes.each do |node|
+          node.stub!(:get).and_return(nil)
+        end
+        
+        @lookup_ring = mock(HashRing)
+        @lookup_ring.stub!(:iterate_nodes).and_return(@nodes)
+
+        LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
+        
+        @key = 'foo'
+        @storage_node = 'bar'
+      end
+
+      it "should return the storage node if the key is found in the lookup ring" do
+        @nodes[0].should_receive(:get).with(@key).and_return(@storage_node)
+        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything).once
+
+        LightCloud.locate_node(@key)
+      end
+
+      it "should return nil if the key doesn't exist in the lookup ring" do
+        LightCloud.locate_node(@key).should be_nil
+      end
+
+      it "should attempt to clean up the lookup ring if the value is NOT found in the first node" do
+        @nodes[1].should_receive(:get).with(@key).and_return(@storage_node)
+        LightCloud.should_not_receive(:get_storage_node)
+        LightCloud.should_receive(:_clean_up_ring).with(@key, @storage_node, anything).once
+
+        LightCloud.locate_node(@key)
+      end
+    end
+  end
 end
