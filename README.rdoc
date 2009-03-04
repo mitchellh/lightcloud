@@ -32,3 +32,9 @@ http://opensource.plurk.com/LightCloud/
 == Installation
 
   sudo gem install mitchellh-lightcloud
+
+== Known Issues / To-Do
+
+The python library actually caches the get/set values in a thread-local
+hash table. This library doesn't do this yet but I'm working on adding
+this in now.
