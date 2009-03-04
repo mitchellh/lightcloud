@@ -1,0 +1,12 @@
+= LightCloud Library for Ruby
+
+== Background
+
+== Usage
+
+  require 'rubygems'
+  require 'lightcloud'
+
+== Installation
+
+  sudo gem install mitchellh-lightcloud
