@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = %w[README.rdoc LICENSE]
   s.add_dependency 'rufus-tokyo', '>= 0.1.9'
-  s.add_dependency 'mitchellh-hash_ring', '>= 0.1'
+  s.add_dependency 'mitchellh-hash_ring', '>= 0.2'
 
   s.has_rdoc = true
   s.homepage = 'http://github.com/mitchellh/lightcloud/'
