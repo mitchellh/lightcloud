@@ -51,24 +51,26 @@ describe LightCloud do
   end
 
   describe "lookup cloud methods" do
-    describe "locating a storage node by key" do
-      before do
-        @nodes = [mock(TyrantNode), mock(TyrantNode), mock(TyrantNode)]
-
-        @nodes.each do |node|
-          node.stub!(:get).and_return(nil)
-        end
-        
-        @lookup_ring = mock(HashRing)
-        @lookup_ring.stub!(:iterate_nodes).and_return(@nodes)
-
-        LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
-        
-        @key = 'foo'
-        @storage_node = 'bar'
+    before do
+      @nodes = [mock(TyrantNode), mock(TyrantNode), mock(TyrantNode)]
+      
+      @nodes.each do |node|
+        node.stub!(:get).and_return(nil)
+        node.stub!(:set).and_return(nil)
+        node.stub!(:delete).and_return(nil)
       end
+      
+      @lookup_ring = mock(HashRing)
+      @lookup_ring.stub!(:iterate_nodes).and_return(@nodes)
+      
+      LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
+      
+      @key = 'foo'
+      @storage_node = 'bar'
+    end
 
-      it "should return the storage node if the key is found in the lookup ring" do
+    describe "locating a storage node by key" do
+      it "should return the storage node if the key is found in the lookup ring" do    
         @nodes[0].should_receive(:get).with(@key).and_return(@storage_node)
         LightCloud.should_receive(:get_storage_node).with(@storage_node, anything).once
 
@@ -85,6 +87,30 @@ describe LightCloud do
         LightCloud.should_receive(:_clean_up_ring).with(@key, @storage_node, anything).once
 
         LightCloud.locate_node(@key)
+      end
+    end
+
+    describe "cleaning the lookup ring" do
+      after do
+        LightCloud._clean_up_ring(@key, @storage_node, LightCloud::DEFAULT_SYSTEM)
+      end
+
+      it "should set the key/value onto the first node (index 0)" do
+        @nodes[0].should_receive(:set).with(@key, @storage_node).once
+      end
+
+      it "should delete the key from the second node (index 1)" do
+        @nodes[1].should_receive(:delete).with(@key).once
+      end
+
+      it "should not touch any other nodes" do
+        @nodes[2].should_not_receive(:get)
+        @nodes[2].should_not_receive(:set)
+        @nodes[2].should_not_receive(:delete)
+      end
+      
+      it "should return the storage node lookup" do
+        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything).once
       end
     end
   end
