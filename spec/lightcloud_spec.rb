@@ -13,6 +13,29 @@ describe LightCloud do
     [:get, :set, :delete].each do |meth|
       @generic_node.stub!(meth).and_return(nil)
     end
+
+    @nodes = [mock(TyrantNode), mock(TyrantNode), mock(TyrantNode)]
+    @lookup_valid_node = mock(TyrantNode)
+    @storage_valid_node = mock(TyrantNode)
+      
+    (@nodes + [@lookup_valid_node, @storage_valid_node]).each do |node|
+      node.stub!(:get).and_return(nil)
+      node.stub!(:set).and_return(nil)
+      node.stub!(:delete).and_return(nil)
+      node.stub!(:to_s).and_return(nil)
+    end
+
+    @storage_valid_node.stub!(:to_s).and_return('storage_valid_node')
+      
+    @lookup_ring = mock(HashRing)
+    @lookup_ring.stub!(:iterate_nodes).and_return(@nodes)
+    @lookup_ring.stub!(:get_node).and_return(@lookup_valid_node)
+      
+    @storage_ring = mock(HashRing)
+    @storage_ring.stub!(:get_node).and_return(@storage_valid_node)
+      
+    LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
+    LightCloud.stub!(:get_storage_ring).and_return(@storage_ring)
   end
 
   describe "node generation" do
@@ -57,29 +80,6 @@ describe LightCloud do
 
   describe "lookup cloud methods" do
     before do
-      @nodes = [mock(TyrantNode), mock(TyrantNode), mock(TyrantNode)]
-      @lookup_valid_node = mock(TyrantNode)
-      @storage_valid_node = mock(TyrantNode)
-      
-      (@nodes + [@lookup_valid_node, @storage_valid_node]).each do |node|
-        node.stub!(:get).and_return(nil)
-        node.stub!(:set).and_return(nil)
-        node.stub!(:delete).and_return(nil)
-        node.stub!(:to_s).and_return(nil)
-      end
-
-      @storage_valid_node.stub!(:to_s).and_return('storage_valid_node')
-      
-      @lookup_ring = mock(HashRing)
-      @lookup_ring.stub!(:iterate_nodes).and_return(@nodes)
-      @lookup_ring.stub!(:get_node).and_return(@lookup_valid_node)
-      
-      @storage_ring = mock(HashRing)
-      @storage_ring.stub!(:get_node).and_return(@storage_valid_node)
-      
-      LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
-      LightCloud.stub!(:get_storage_ring).and_return(@storage_ring)
-      
       @key = 'foo'
       @storage_node = 'bar'
     end
@@ -167,6 +167,30 @@ describe LightCloud do
 
     it "should set the value on the node returned by locate node or init" do
       @generic_node.should_receive(:set).with(@key, @value)
+    end
+  end
+
+  describe "getting" do
+    before do
+      @value = 'baz'
+      @storage_ring.should_receive(:get_node).with(@key).and_return(@generic_node)
+    end
+
+    after do
+      LightCloud.get(@key).should eql(@value)
+    end
+
+    it "should not resort to the lookup table if it can find the key directly" do
+      @generic_node.should_receive(:get).with(@key).and_return(@value)
+
+      LightCloud.should_not_receive(:locate_node)
+    end
+
+    it "should get the storage node from the lookup table if it can't find the key directly" do
+      @generic_node.should_receive(:get).once.and_return(nil)
+
+      LightCloud.should_receive(:locate_node).with(@key, anything).and_return(@storage_valid_node)
+      @storage_valid_node.should_receive(:get).with(@key).and_return(@value)
     end
   end
 end
