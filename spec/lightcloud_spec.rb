@@ -33,9 +33,11 @@ describe LightCloud do
       
     @storage_ring = mock(HashRing)
     @storage_ring.stub!(:get_node).and_return(@storage_valid_node)
-      
-    LightCloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
-    LightCloud.stub!(:get_storage_ring).and_return(@storage_ring)
+
+    @cloud = LightCloud.new
+    @cloud.stub!(:get_lookup_ring).and_return(@lookup_ring)
+    @cloud.stub!(:get_storage_ring).and_return(@storage_ring)
+    @cloud.stub!(:get_storage_node).and_return(@storage_valid_node)
   end
 
   describe "node generation" do
@@ -65,14 +67,14 @@ describe LightCloud do
     end
 
     it "should return the tyrant nodes as a name to node hash" do
-      unneeded, name_to_nodes = LightCloud.generate_ring(@valid_lookup_nodes)
+      unneeded, name_to_nodes = @cloud.generate_ring(@valid_lookup_nodes)
 
       name_to_nodes.should be_has_key('lookup1_A')
       name_to_nodes['lookup1_A'].should be_kind_of(TyrantNode)
     end
 
     it "should return a hash ring with the nodes" do
-      ring, unneeded = LightCloud.generate_ring(@valid_lookup_nodes)
+      ring, unneeded = @cloud.generate_ring(@valid_lookup_nodes)
 
       ring.should be_kind_of(HashRing)
     end
@@ -86,13 +88,13 @@ describe LightCloud do
 
     describe "locating or initting a storage node by key" do
       after do
-        LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(@storage_node)
-        LightCloud.locate_node_or_init(@key, LightCloud::DEFAULT_SYSTEM, anything)
+        @cloud.should_receive(:locate_node).with(@key, anything).once.and_return(@storage_node)
+        @cloud.locate_node_or_init(@key, LightCloud::DEFAULT_SYSTEM)
       end
 
       it "should just return the storage node if it was found" do
-        LightCloud.should_not_receive(:get_storage_ring)
-        LightCloud.should_not_receive(:get_lookup_ring)
+        @cloud.should_not_receive(:get_storage_ring)
+        @cloud.should_not_receive(:get_lookup_ring)
       end
 
       it "should set the lookup ring to point to the new storage node if no previous storage node was found" do
@@ -106,27 +108,27 @@ describe LightCloud do
     describe "locating a storage node by key" do
       it "should return the storage node if the key is found in the lookup ring" do    
         @nodes[0].should_receive(:get).with(@key).and_return(@storage_node)
-        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything, anything).once
+        @cloud.should_receive(:get_storage_node).with(@storage_node, anything).once
 
-        LightCloud.locate_node(@key)
+        @cloud.locate_node(@key)
       end
 
       it "should return nil if the key doesn't exist in the lookup ring" do
-        LightCloud.locate_node(@key).should be_nil
+        @cloud.locate_node(@key).should be_nil
       end
 
       it "should attempt to clean up the lookup ring if the value is NOT found in the first node" do
         @nodes[1].should_receive(:get).with(@key).and_return(@storage_node)
-        LightCloud.should_not_receive(:get_storage_node)
-        LightCloud.should_receive(:_clean_up_ring).with(@key, @storage_node, anything, anything).once
+        @cloud.should_not_receive(:get_storage_node)
+        @cloud.should_receive(:_clean_up_ring).with(@key, @storage_node, anything).once
 
-        LightCloud.locate_node(@key)
+        @cloud.locate_node(@key)
       end
     end
 
     describe "cleaning the lookup ring" do
       after do
-        LightCloud._clean_up_ring(@key, @storage_node, LightCloud::DEFAULT_SYSTEM)
+        @cloud._clean_up_ring(@key, @storage_node, LightCloud::DEFAULT_SYSTEM)
       end
 
       it "should set the key/value onto the first node (index 0)" do
@@ -144,7 +146,7 @@ describe LightCloud do
       end
       
       it "should return the storage node lookup" do
-        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything, anything).once
+        @cloud.should_receive(:get_storage_node).with(@storage_node, anything).once
       end
     end
   end
@@ -154,15 +156,15 @@ describe LightCloud do
       @key = 'hello'
       @value = 'world!'
 
-      LightCloud.stub!(:locate_node_or_init).and_return(@generic_node)
+      @cloud.stub!(:locate_node_or_init).and_return(@generic_node)
     end
 
     after do
-      LightCloud.set(@key, @value)
+      @cloud.set(@key, @value)
     end
 
     it "should lookup the node or init for where to place key" do
-      LightCloud.should_receive(:locate_node_or_init).with(@key, anything, anything).once.and_return(@generic_node)
+      @cloud.should_receive(:locate_node_or_init).with(@key, anything).once.and_return(@generic_node)
     end
 
     it "should set the value on the node returned by locate node or init" do
@@ -178,19 +180,19 @@ describe LightCloud do
     end
 
     after do
-      LightCloud.get(@key).should eql(@value)
+      @cloud.get(@key).should eql(@value)
     end
 
     it "should not resort to the lookup table if it can find the key directly" do
       @generic_node.should_receive(:get).with(@key).and_return(@value)
 
-      LightCloud.should_not_receive(:locate_node)
+      @cloud.should_not_receive(:locate_node)
     end
 
     it "should get the storage node from the lookup table if it can't find the key directly" do
       @generic_node.should_receive(:get).once.and_return(nil)
 
-      LightCloud.should_receive(:locate_node).with(@key, anything, anything).and_return(@storage_valid_node)
+      @cloud.should_receive(:locate_node).with(@key, anything).and_return(@storage_valid_node)
       @storage_valid_node.should_receive(:get).with(@key).and_return(@value)
     end
   end
@@ -206,7 +208,7 @@ describe LightCloud do
       # spec in this context, which WOULD raise an error if
       # it failed
       lambda do
-        LightCloud.delete(@key)
+        @cloud.delete(@key)
       end.should_not raise_error
     end
 
@@ -217,54 +219,22 @@ describe LightCloud do
     end
 
     it "should first try to get the storage node from lookup ring" do
-      LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(@generic_node)
-      LightCloud.should_not_receive(:get_storage_ring)
-
+      @cloud.should_receive(:locate_node).with(@key, anything).once.and_return(@generic_node)
+      @cloud.should_not_receive(:get_storage_ring)
     end
 
     it "should try to get storage node directly if lookup ring failed" do
-      LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(nil)
-      LightCloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
+      @cloud.should_receive(:locate_node).with(@key, anything).once.and_return(nil)
+      @cloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
       @storage_ring.should_receive(:get_node).with(@key).once.and_return(@generic_node)
 
       @generic_node.should_receive(:delete).with(@key)
     end
 
     it "should only delete from a storage node if one was found" do
-      LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(nil)
-      LightCloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
+      @cloud.should_receive(:locate_node).with(@key, anything).once.and_return(nil)
+      @cloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
       @storage_ring.should_receive(:get_node).with(@key).once.and_return(nil)
-    end
-  end
-
-  describe "lightcloud instances" do
-    before do
-      cloud_config = {
-        'lookup1_A' => ['127.0.0.1:1234', '127.0.0.2:1234'],
-        'storage1_A' => ['127.0.0.1:4567', '127.0.0.2:4567']
-      }
-
-      @cloud = LightCloud.new(*LightCloud.generate_nodes(cloud_config))
-    end
-
-    it "should forward arguments to class method init on initialize" do
-      LightCloud.should_receive(:init).with('a', 'b', 'c', {}).once
-      LightCloud.new('a','b','c')
-    end
-
-    it "should forward set arguments to class method" do
-      LightCloud.should_receive(:set).with('key', 'value', anything, anything).once
-      @cloud.set('key', 'value')
-    end
-
-    it "should forward get arguments to class method" do
-      LightCloud.should_receive(:get).with('key', anything, anything).once
-      @cloud.get('key')
-    end
-
-    it "should forward delete arguments to class method" do
-      LightCloud.should_receive(:delete).with('key', anything, anything).once
-      @cloud.delete('key')
     end
   end
 end
