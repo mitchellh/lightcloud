@@ -1,0 +1,9 @@
+= 0.6
+
+* Added ability to use LightCloud as an instance as 
+  well as using the class methods
+
+= 0.5
+
+* Initial Release
+* Basically a direct port from Python version
