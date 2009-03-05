@@ -40,6 +40,11 @@ class LightCloud
 
   @@systems = {}
 
+  # Initialize LightCloud as an instance instead of using the class
+  # methods. Expects the same arguments as LightCloud.init, except
+  # this will return a new instance of LightCloud.
+  #
+  # Any nodes initialized through here will not work one class methods.
   def initialize(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM)
     @system = {}
     self.class.init(lookup_nodes, storage_nodes, system, @system)
@@ -61,25 +66,25 @@ class LightCloud
   # Set first checks to see if the key is already stored. If it is
   # it uses that same node to store the new value. Otherwise, it
   # determines where to store the value based on the hash_ring
-  def self.set(key, value, system=DEFAULT_SYSTEM)
-    storage_node = self.locate_node_or_init(key, system)
+  def self.set(key, value, system=DEFAULT_SYSTEM, systems=@@systems)
+    storage_node = self.locate_node_or_init(key, system, systems)
     return storage_node.set(key, value)
   end
 
   #
   # Gets a value based on a key. 
-  def self.get(key, system=DEFAULT_SYSTEM)
+  def self.get(key, system=DEFAULT_SYSTEM, systems=@@systems)
     result = nil
 
     # Try to lookup key directly
-    storage_node = self.get_storage_ring(system).get_node(key)
+    storage_node = self.get_storage_ring(system, systems).get_node(key)
     value = storage_node.get(key)
 
     result = value unless value.nil?
     
     # Else use the lookup ring
     if result.nil?
-      storage_node = self.locate_node(key, system)
+      storage_node = self.locate_node(key, system, systems)
       
       result = storage_node.get(key) unless storage_node.nil?
     end
@@ -90,11 +95,11 @@ class LightCloud
   #
   # Lookup the key and delete it from both the storage ring
   # and lookup ring
-  def self.delete(key, system=DEFAULT_SYSTEM)
-    storage_node = self.locate_node(key, system)
+  def self.delete(key, system=DEFAULT_SYSTEM, systems=@@systems)
+    storage_node = self.locate_node(key, system, systems)
     
-    storage_node = get_storage_ring(system).get_node(key) if storage_node.nil?
-    lookup_nodes = get_lookup_ring(system).iterate_nodes(key)
+    storage_node = get_storage_ring(system, systems).get_node(key) if storage_node.nil?
+    lookup_nodes = get_lookup_ring(system, systems).iterate_nodes(key)
     lookup_nodes.each_index do |i|
       break if i > 1
       
@@ -108,13 +113,13 @@ class LightCloud
   #--
   # Lookup Cloud
   #++
-  def self.locate_node_or_init(key, system)
-    storage_node = self.locate_node(key, system)
+  def self.locate_node_or_init(key, system, systems=@@systems)
+    storage_node = self.locate_node(key, system, systems)
 
     if storage_node.nil?
-      storage_node = self.get_storage_ring(system).get_node(key)
+      storage_node = self.get_storage_ring(system, systems).get_node(key)
 
-      lookup_node = self.get_lookup_ring(system).get_node(key)
+      lookup_node = self.get_lookup_ring(system, systems).get_node(key)
       lookup_node.set(key, storage_node.to_s)
     end
 
@@ -124,8 +129,8 @@ class LightCloud
   #
   # Locates a node in the lookup ring, returning the node if it is found, or
   # nil otherwise.
-  def self.locate_node(key, system=DEFAULT_SYSTEM)
-    nodes = self.get_lookup_ring(system).iterate_nodes(key)
+  def self.locate_node(key, system=DEFAULT_SYSTEM, systems=@@systems)
+    nodes = self.get_lookup_ring(system, systems).iterate_nodes(key)
     
     lookups = 0
     value = nil
@@ -142,14 +147,14 @@ class LightCloud
     return nil if value.nil?
     
     if lookups == 0
-      return self.get_storage_node(value, system)
+      return self.get_storage_node(value, system, systems)
     else
-      return self._clean_up_ring(key, value, system)
+      return self._clean_up_ring(key, value, system, systems)
     end
   end
 
-  def self._clean_up_ring(key, value, system)
-    nodes = self.get_lookup_ring(system).iterate_nodes(key)
+  def self._clean_up_ring(key, value, system, systems=@@systems)
+    nodes = self.get_lookup_ring(system, systems).iterate_nodes(key)
 
     nodes.each_index do |i|
       break if i > 1
@@ -162,25 +167,25 @@ class LightCloud
       end
     end
 
-    return self.get_storage_node(value, system)
+    return self.get_storage_node(value, system, systems)
   end
 
   #--
   # Accessors for rings
   #++
-  def self.get_lookup_ring(system=DEFAULT_SYSTEM)
-    @@systems[system][0]
+  def self.get_lookup_ring(system=DEFAULT_SYSTEM, systems=@@systems)
+    systems[system][0]
   end
 
-  def self.get_storage_ring(system=DEFAULT_SYSTEM)
-    @@systems[system][1]
+  def self.get_storage_ring(system=DEFAULT_SYSTEM, systems=@@systems)
+    systems[system][1]
   end
 
   #--
   # Accessors for nodes
   #++
-  def self.get_storage_node(name, system=DEFAULT_SYSTEM)
-    @@systems[system][3][name]
+  def self.get_storage_node(name, system=DEFAULT_SYSTEM, systems=@@systems)
+    systems[system][3][name]
   end
 
   #--

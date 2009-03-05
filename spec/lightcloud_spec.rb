@@ -86,8 +86,8 @@ describe LightCloud do
 
     describe "locating or initting a storage node by key" do
       after do
-        LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(@storage_node)
-        LightCloud.locate_node_or_init(@key, LightCloud::DEFAULT_SYSTEM)
+        LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(@storage_node)
+        LightCloud.locate_node_or_init(@key, LightCloud::DEFAULT_SYSTEM, anything)
       end
 
       it "should just return the storage node if it was found" do
@@ -106,7 +106,7 @@ describe LightCloud do
     describe "locating a storage node by key" do
       it "should return the storage node if the key is found in the lookup ring" do    
         @nodes[0].should_receive(:get).with(@key).and_return(@storage_node)
-        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything).once
+        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything, anything).once
 
         LightCloud.locate_node(@key)
       end
@@ -118,7 +118,7 @@ describe LightCloud do
       it "should attempt to clean up the lookup ring if the value is NOT found in the first node" do
         @nodes[1].should_receive(:get).with(@key).and_return(@storage_node)
         LightCloud.should_not_receive(:get_storage_node)
-        LightCloud.should_receive(:_clean_up_ring).with(@key, @storage_node, anything).once
+        LightCloud.should_receive(:_clean_up_ring).with(@key, @storage_node, anything, anything).once
 
         LightCloud.locate_node(@key)
       end
@@ -144,7 +144,7 @@ describe LightCloud do
       end
       
       it "should return the storage node lookup" do
-        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything).once
+        LightCloud.should_receive(:get_storage_node).with(@storage_node, anything, anything).once
       end
     end
   end
@@ -162,7 +162,7 @@ describe LightCloud do
     end
 
     it "should lookup the node or init for where to place key" do
-      LightCloud.should_receive(:locate_node_or_init).with(@key, anything).once.and_return(@generic_node)
+      LightCloud.should_receive(:locate_node_or_init).with(@key, anything, anything).once.and_return(@generic_node)
     end
 
     it "should set the value on the node returned by locate node or init" do
@@ -190,7 +190,7 @@ describe LightCloud do
     it "should get the storage node from the lookup table if it can't find the key directly" do
       @generic_node.should_receive(:get).once.and_return(nil)
 
-      LightCloud.should_receive(:locate_node).with(@key, anything).and_return(@storage_valid_node)
+      LightCloud.should_receive(:locate_node).with(@key, anything, anything).and_return(@storage_valid_node)
       @storage_valid_node.should_receive(:get).with(@key).and_return(@value)
     end
   end
@@ -217,13 +217,13 @@ describe LightCloud do
     end
 
     it "should first try to get the storage node from lookup ring" do
-      LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(@generic_node)
+      LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(@generic_node)
       LightCloud.should_not_receive(:get_storage_ring)
 
     end
 
     it "should try to get storage node directly if lookup ring failed" do
-      LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(nil)
+      LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(nil)
       LightCloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
       @storage_ring.should_receive(:get_node).with(@key).once.and_return(@generic_node)
 
@@ -231,7 +231,7 @@ describe LightCloud do
     end
 
     it "should only delete from a storage node if one was found" do
-      LightCloud.should_receive(:locate_node).with(@key, anything).once.and_return(nil)
+      LightCloud.should_receive(:locate_node).with(@key, anything, anything).once.and_return(nil)
       LightCloud.should_receive(:get_storage_ring).once.and_return(@storage_ring)
       @storage_ring.should_receive(:get_node).with(@key).once.and_return(nil)
     end
