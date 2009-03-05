@@ -1,3 +1,9 @@
+= 0.7
+
+* Changed class methods to use singleton instance instead
+  of passing around so much class-specific state which
+  was really messy.
+
 = 0.6
 
 * Added ability to use LightCloud as an instance as 
