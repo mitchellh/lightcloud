@@ -40,11 +40,16 @@ class LightCloud
 
   @@systems = {}
 
-  def self.init(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM)
+  def initialize(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM)
+    @system = {}
+    self.class.init(lookup_nodes, storage_nodes, system, @system)
+  end
+
+  def self.init(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM, systems=@@systems)
     lookup_ring, name_to_l_nodes = self.generate_ring(lookup_nodes)
     storage_ring, name_to_s_nodes = self.generate_ring(storage_nodes)
 
-    @@systems[system] = [lookup_ring, storage_ring, name_to_l_nodes, name_to_s_nodes]
+    systems[system] = [lookup_ring, storage_ring, name_to_l_nodes, name_to_s_nodes]
   end
 
   #--

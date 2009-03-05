@@ -236,4 +236,11 @@ describe LightCloud do
       @storage_ring.should_receive(:get_node).with(@key).once.and_return(nil)
     end
   end
+
+  describe "lightcloud instances" do
+    it "should forward arguments to class method init on initialize" do
+      LightCloud.should_receive(:init).with('a', 'b', 'c', {}).once
+      LightCloud.new('a','b','c')
+    end
+  end
 end
