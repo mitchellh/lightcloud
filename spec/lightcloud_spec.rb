@@ -237,4 +237,37 @@ describe LightCloud do
       @storage_ring.should_receive(:get_node).with(@key).once.and_return(nil)
     end
   end
+
+  describe "class methods" do
+    before do
+      LightCloud.should_receive(:instance).and_return(@cloud)
+      
+      @key = 'foo'
+      @value = 'bar'
+    end
+
+    it "should call add_system on singleton when init is called" do
+      @cloud.should_receive(:add_system).with(@valid_lookup_nodes, @valid_storage_nodes, anything)
+
+      LightCloud.init(@valid_lookup_nodes, @valid_storage_nodes)
+    end
+
+    it "should call get on instance for get" do
+      @cloud.should_receive(:get).with(@key, anything).once
+      
+      LightCloud.get(@key)
+    end
+
+    it "should call set on instance for set" do
+      @cloud.should_receive(:set).with(@key, @value, anything).once
+
+      LightCloud.set(@key, @value)
+    end
+
+    it "should call delete on instance for delete" do
+      @cloud.should_receive(:delete).with(@key, anything).once
+
+      LightCloud.delete(@key)
+    end
+  end
 end
