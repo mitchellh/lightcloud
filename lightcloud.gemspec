@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
  
   s.name = 'lightcloud'
-  s.version = '0.5'
+  s.version = '0.6'
   s.date = '2009-03-04'
  
   s.description = "LightCloud library for Ruby"
@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.homepage = 'http://github.com/mitchellh/lightcloud/'
   s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "hash_ring", "--main", "README.rdoc"]
   s.require_paths = %w[lib]
-  s.rubygems_version = '0.5'
+  s.rubygems_version = '0.6'
 
   s.files = %w[
     CREDITS
