@@ -238,9 +238,33 @@ describe LightCloud do
   end
 
   describe "lightcloud instances" do
+    before do
+      cloud_config = {
+        'lookup1_A' => ['127.0.0.1:1234', '127.0.0.2:1234'],
+        'storage1_A' => ['127.0.0.1:4567', '127.0.0.2:4567']
+      }
+
+      @cloud = LightCloud.new(*LightCloud.generate_nodes(cloud_config))
+    end
+
     it "should forward arguments to class method init on initialize" do
       LightCloud.should_receive(:init).with('a', 'b', 'c', {}).once
       LightCloud.new('a','b','c')
+    end
+
+    it "should forward set arguments to class method" do
+      LightCloud.should_receive(:set).with('key', 'value', anything, anything).once
+      @cloud.set('key', 'value')
+    end
+
+    it "should forward get arguments to class method" do
+      LightCloud.should_receive(:get).with('key', anything, anything).once
+      @cloud.get('key')
+    end
+
+    it "should forward delete arguments to class method" do
+      LightCloud.should_receive(:delete).with('key', anything, anything).once
+      @cloud.delete('key')
     end
   end
 end

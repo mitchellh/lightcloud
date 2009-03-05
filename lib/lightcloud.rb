@@ -46,8 +46,8 @@ class LightCloud
   #
   # Any nodes initialized through here will not work one class methods.
   def initialize(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM)
-    @system = {}
-    self.class.init(lookup_nodes, storage_nodes, system, @system)
+    @systems = {}
+    self.class.init(lookup_nodes, storage_nodes, system, @systems)
   end
 
   def self.init(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM, systems=@@systems)
@@ -60,6 +60,26 @@ class LightCloud
   #--
   # Get/Set/Delete
   #++
+  # Sets a value to a key on a LightCloud instance. See
+  # LightCloud.set for more information
+  def set(key, value, system=DEFAULT_SYSTEM)
+    self.class.set(key, value, system, @systems)
+  end
+
+  #
+  # Gets a value to a key on a LightCloud instance. See
+  # LightCloud.get for more information.
+  def get(key, system=DEFAULT_SYSTEM)
+    self.class.get(key, system, @systems)
+  end
+
+  #
+  # Delete a value from a LightCloud instance. See
+  # LightCloud.delete for more information.
+  def delete(key, system=DEFAULT_SYSTEM)
+    self.class.delete(key, system, @systems)
+  end
+
   #
   # Sets a value to a key in the LightCloud system.
   #
