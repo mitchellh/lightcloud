@@ -39,6 +39,9 @@ class LightCloud
   DEFAULT_SYSTEM = 'default'
   @@instance = nil
 
+  #--
+  # INSTANCE METHODS
+  #++
   # Initialize LightCloud as an instance instead of using the class
   # methods. Expects the same arguments as LightCloud.init, except
   # this will return a new instance of LightCloud.
@@ -56,11 +59,6 @@ class LightCloud
 
     @systems ||= {}
     @systems[system] = [lookup_ring, storage_ring, name_to_l_nodes, name_to_s_nodes]    
-  end
-
-  def self.init(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM)
-    @@instance ||= LightCloud.new
-    @@instance.add_system(lookup_nodes, storage_nodes, system)
   end
 
   #--
@@ -111,29 +109,6 @@ class LightCloud
     
     storage_node.delete(key) unless storage_node.nil?
     true
-  end
-
-  #
-  # Sets a value to a key in the LightCloud system.
-  #
-  # Set first checks to see if the key is already stored. If it is
-  # it uses that same node to store the new value. Otherwise, it
-  # determines where to store the value based on the hash_ring
-  def self.set(key, value, system=DEFAULT_SYSTEM)
-    instance.set(key, value, system)
-  end
-
-  #
-  # Gets a value based on a key. 
-  def self.get(key, system=DEFAULT_SYSTEM)
-    instance.get(key, system)
-  end
-
-  #
-  # Lookup the key and delete it from both the storage ring
-  # and lookup ring
-  def self.delete(key, system=DEFAULT_SYSTEM)
-    instance.delete(key, system)
   end
 
   #--
@@ -214,6 +189,57 @@ class LightCloud
     @systems[system][3][name]
   end
 
+  #
+  # Given a set of nodes it creates the the nodes as Tokyo
+  # Tyrant objects and returns a hash ring with them
+  def generate_ring(nodes)
+    objects = []
+    name_to_obj = {}
+    
+    nodes.each do |name, nodelist|
+      obj = TyrantNode.new(name, nodelist)
+      name_to_obj[name] = obj
+
+      objects.push(obj)
+    end
+
+    return HashRing.new(objects), name_to_obj
+  end
+
+  #--
+  # CLASS METHODS
+  #++
+  #
+  # Initializes LightCloud library with lookup and storage nodes.
+  # This only needs to be called with servers with which you intend
+  # to use the class methods (set/get/delete)
+  def self.init(lookup_nodes, storage_nodes, system=DEFAULT_SYSTEM)
+    instance.add_system(lookup_nodes, storage_nodes, system)
+  end
+
+  #
+  # Sets a value to a key in the LightCloud system.
+  #
+  # Set first checks to see if the key is already stored. If it is
+  # it uses that same node to store the new value. Otherwise, it
+  # determines where to store the value based on the hash_ring
+  def self.set(key, value, system=DEFAULT_SYSTEM)
+    instance.set(key, value, system)
+  end
+
+  #
+  # Gets a value based on a key. 
+  def self.get(key, system=DEFAULT_SYSTEM)
+    instance.get(key, system)
+  end
+
+  #
+  # Lookup the key and delete it from both the storage ring
+  # and lookup ring
+  def self.delete(key, system=DEFAULT_SYSTEM)
+    instance.delete(key, system)
+  end
+
   #--
   # Instance accessor
   #++
@@ -238,22 +264,5 @@ class LightCloud
     end
 
     return lookup_nodes, storage_nodes
-  end
-  
-  #
-  # Given a set of nodes it creates the the nodes as Tokyo
-  # Tyrant objects and returns a hash ring with them
-  def generate_ring(nodes)
-    objects = []
-    name_to_obj = {}
-    
-    nodes.each do |name, nodelist|
-      obj = TyrantNode.new(name, nodelist)
-      name_to_obj[name] = obj
-
-      objects.push(obj)
-    end
-
-    return HashRing.new(objects), name_to_obj
   end
 end
