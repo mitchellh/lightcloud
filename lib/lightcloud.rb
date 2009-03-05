@@ -35,7 +35,7 @@ require File.join(File.dirname(__FILE__), 'tyrant_client')
 #  print LightCloud.get("hello") # => nil
 #
 class LightCloud
-  VERSION = '0.5'
+  VERSION = '0.6'
   DEFAULT_SYSTEM = 'default'
 
   @@systems = {}
